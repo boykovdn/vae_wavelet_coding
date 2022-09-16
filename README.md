@@ -5,3 +5,5 @@ We use the pytorch wavelet transform library, installation instructions for whic
 The conda environment can be replicated by running:
 
 conda env create -f environment.yml
+
+Manually install the SUPN model repository https://github.com/ndfcampbell/supn_torch
