@@ -7,7 +7,7 @@ from pathlib import Path
 import torch
 
 from torch.utils.data import DataLoader
-from torchvision.datasets import CelebA
+from torchvision.datasets import CelebA, MNIST
 from torchvision.transforms import (
         Compose,
         CenterCrop,
@@ -16,26 +16,57 @@ from torchvision.transforms import (
         Normalize,
         ConvertImageDtype)
 
-def get_dataset(split="train"):
+def get_dataset(split="train", dataset_name="mnist"):
     r"""
     Handles loading the dataset object and adding the relevant transforms to it.
 
     Args:
         :split: str, train/test/valid/all, as required by the CelebA class from
             PyTorch.
-    """
-    dataset = CelebA(
-            root=Path(__file__).parents[1],
-            download=True
-            )
 
-    dataset.transform = Compose([
-            PILToTensor(),
-            CenterCrop(128),
-            Grayscale(),
-            ConvertImageDtype(torch.float32),
-            Normalize(0. ,1.)
-        ])
+        :dataset_name: str, identifier for which dataset to use.
+    """
+    allowed_splits = ["train", "test"]
+
+    assert split in allowed_splits, "Expected split in {}, but got {}"\
+            .format(allowed_splits, split)
+
+    # TODO Add wavelet transformation
+    if dataset_name == "celeba":
+
+        dataset = CelebA(
+                root=Path(__file__).parents[1],
+                download=True,
+                split=split
+                )
+
+        dataset.transform = Compose([
+                PILToTensor(),
+                CenterCrop(128),
+                Grayscale(),
+                ConvertImageDtype(torch.float32),
+                Normalize(0. ,1.)
+            ])
+
+    elif dataset_name == "mnist":
+
+        train_split = split == "train"
+
+        dataset = MNIST(
+                root=Path(__file__).parents[1],
+                download=True,
+                train=train_split)
+
+        dataset.transform = Compose([
+                PILToTensor(),
+                ConvertImageDtype(torch.float32),
+                Normalize(0. ,1.)
+            ])
+
+    else:
+        raise Exception(
+                "Dataset identifier {} not recognised.".format(dataset_name)
+                )
 
     return dataset
 
