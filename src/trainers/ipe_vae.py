@@ -170,7 +170,7 @@ class IPEVAETrainer:
                 # This is the different bit from the torch_supn trainer.
                 if self.enforce_l2:
                     x_chol = torch.zeros_like(x_chol)
-                    x_chol[:,0] = torch.eye(x_chol.shape[-1])
+                    x_chol[:,0] = torch.ones(x_chol.shape[-1])
 
                     if self.stdev is not None:
                         x_chol = x_chol / self.stdev
