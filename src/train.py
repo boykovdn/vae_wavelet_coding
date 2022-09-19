@@ -1,18 +1,17 @@
 import torch
 from tqdm import tqdm
 from utils import get_dataset, get_dataloader
-from supn.logging.ipe_vae import logging_images_visualization
+from loggers import logging_wavelets_visualization
 from supn.ipe_vae import IPE_autoencoder_mu_l
-from supn.trainers.ipe_vae import IPEVAETrainer
+from trainers.ipe_vae import IPEVAETrainer
 from torch.utils.tensorboard import SummaryWriter
 
 def main():
 
-    LEARNING_RATE = 0.001 #config['LEARNING_RATE']
     ENCODING_DIM = 2 #config['ENCODING_DIM']
     DEPTH = 3 #config['DEPTH']
     batch_size = 64
-    init_num_channels = 1
+    init_num_channels = 8
     tb_output_dir = "./tb_test"
     training_type = "mean_only"
     init_state_path = None #"./checkpoint_mean.model"
@@ -20,11 +19,11 @@ def main():
     image_logging_period = 100
     max_iterations = 100000
     learning_rate = 1e-3
+    STDEV = 0.1
     device=0
 
     summary_writer = SummaryWriter(log_dir=tb_output_dir)
 
-    # TODO Change to be able to specify dataset used, or change to MNIST
     dataloader = get_dataloader(batch_size=batch_size)
     input_shape = dataloader.dataset[0][0].shape # (1, 128, 128)
 
@@ -38,23 +37,21 @@ def main():
 
     # Logging
     # Datapoints unseen during the training process.
-    # TODO MNIST dataset
     dset_test = get_dataset(split="test")
     def image_logging_function(it):
-        # TODO Check visualization is OK.
         if it % image_logging_period == 0:
-            logging_images_visualization(
+            logging_wavelets_visualization(
                     model,
                     dset_test,
                     it,
-                    summary_writer,
-                    log_supn_samples=True)
+                    summary_writer)
 
-    # TODO Let trainer train with simple L2 loss.
     trainer = IPEVAETrainer(model, 
             training_type=training_type, 
             summary_writer = summary_writer,
-            learning_rate = learning_rate)
+            learning_rate = learning_rate,
+            enforce_l2=True,
+            stdev=STDEV)
 
     trainer.train(
                 dataloader, 
