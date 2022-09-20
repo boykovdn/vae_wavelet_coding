@@ -15,6 +15,7 @@ from torchvision.transforms import (
         Grayscale,
         Normalize,
         ConvertImageDtype)
+from supn.utils import rescale_to
 
 def get_dataset(split="train", dataset_name="mnist"):
     r"""
@@ -59,8 +60,9 @@ def get_dataset(split="train", dataset_name="mnist"):
 
         dataset.transform = Compose([
                 PILToTensor(),
+                CenterCrop(32),
                 ConvertImageDtype(torch.float32),
-                Normalize(0. ,1.)
+                lambda img : rescale_to(img, to=(-1,1))
             ])
 
     else:
