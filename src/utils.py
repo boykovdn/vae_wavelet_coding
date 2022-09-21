@@ -17,6 +17,9 @@ from torchvision.transforms import (
         ConvertImageDtype)
 from supn.utils import rescale_to
 
+from transforms import wavelet_transform_reshape
+from pytorch_wavelets import DWTForward
+
 def get_dataset(split="train", dataset_name="mnist"):
     r"""
     Handles loading the dataset object and adding the relevant transforms to it.
@@ -53,6 +56,8 @@ def get_dataset(split="train", dataset_name="mnist"):
 
         train_split = split == "train"
 
+        wavelet_tr = DWTForward(J=1, mode='zero', wave='db2')
+
         dataset = MNIST(
                 root=Path(__file__).parents[1],
                 download=True,
@@ -60,9 +65,10 @@ def get_dataset(split="train", dataset_name="mnist"):
 
         dataset.transform = Compose([
                 PILToTensor(),
-                CenterCrop(32),
                 ConvertImageDtype(torch.float32),
-                lambda img : rescale_to(img, to=(-1,1))
+                lambda img : wavelet_transform_reshape(img, wavelet_tr),
+                CenterCrop(16),
+                lambda img : rescale_to(img, to=(-1,1))#  TODO 
             ])
 
     else:
