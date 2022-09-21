@@ -40,11 +40,12 @@ def logging_wavelets_visualization(model, dset, iteration, summary_writer,
     with torch.no_grad():
 
         model_outp_ = model(inputs)
-        assert len(model_outp_) == 4, "Assuming SUPN model output format."
+        assert isinstance(model_outp_, tuple), "Assuming SUPN model output format."
         out_mu = model_outp_[0]
 
-    summary_writer.add_images("Input", 
-            rescale_to(inputs, to=(0,1)), iteration, dataformats="NCHW")
+    for idx_c in range(inputs.shape[1]):
+        summary_writer.add_images("Input ch {}".format(idx_c), 
+                rescale_to(inputs[:,idx_c].unsqueeze(1), to=(0,1)), iteration, dataformats="NCHW")
 
     for idx_c in range(out_mu.shape[1]):
         summary_writer.add_images("SUPN Mean wavelet channel {}".format(idx_c),
