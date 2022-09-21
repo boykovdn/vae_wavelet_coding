@@ -3,23 +3,24 @@ from tqdm import tqdm
 from utils import get_dataset, get_dataloader
 from loggers import logging_wavelets_visualization
 from supn.ipe_vae import IPE_autoencoder_mu_l
-from trainers.ipe_vae import IPEVAETrainer
+from model import WaveletVAE
+from trainers.ipe_vae import IPEVAETrainer, WaveletVAETrainer
 from torch.utils.tensorboard import SummaryWriter
 
 def main():
 
-    ENCODING_DIM = 2 #config['ENCODING_DIM']
+    ENCODING_DIM = 32 #config['ENCODING_DIM']
     DEPTH = 3 #config['DEPTH']
     batch_size = 64
-    init_num_channels = 8
-    tb_output_dir = "./tb_test"
+    init_num_channels = 32
+    tb_output_dir = "./tb_test_1"
     training_type = "mean_only"
     init_state_path = None #"./checkpoint_mean.model"
     save_state_path = "./checkpoint.model"
     image_logging_period = 100
     max_iterations = 100000
     learning_rate = 1e-3
-    STDEV = 0.1
+    STDEV = 0.05
     device=0
 
     summary_writer = SummaryWriter(log_dir=tb_output_dir)
@@ -27,12 +28,13 @@ def main():
     dataloader = get_dataloader(batch_size=batch_size)
     input_shape = dataloader.dataset[0][0].shape # (1, 128, 128)
 
-    model = IPE_autoencoder_mu_l(
+    model = WaveletVAE(
                 input_shape, 
                 ENCODING_DIM, 
                 dim_h=ENCODING_DIM, 
                 depth=DEPTH,
-                init_num_channels=init_num_channels
+                init_num_channels=init_num_channels,
+                output_channels=4 # The number of wavelet parameters per location.
             ).to(device)
 
     # Logging
@@ -46,11 +48,9 @@ def main():
                     it,
                     summary_writer)
 
-    trainer = IPEVAETrainer(model, 
-            training_type=training_type, 
-            summary_writer = summary_writer,
-            learning_rate = learning_rate,
-            enforce_l2=True,
+    trainer = WaveletVAETrainer(model, 
+            summary_writer=summary_writer,
+            learning_rate=learning_rate,
             stdev=STDEV)
 
     trainer.train(
