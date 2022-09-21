@@ -1,19 +1,22 @@
 import torch
 from supn.losses.ipe_vae import kl_divergence_unit_normal
-`
+
 class L2VAELoss(torch.nn.Module):
     r"""
     L2 + KL loss with listener to log components into tensorboard.
     """
 
-    def __init__(self, loss_logging_listener=None):
+    def __init__(self, stdev=1., loss_logging_listener=None):
         r"""
         :loss_logging_listener: callable, used to log individual components of loss.
+
+        :stdev: float, the standard deviation, used to scale the L2 loss.
         """
         super().__init__()
 
         self.loss_logging_listener = loss_logging_listener
-        self.l2_func = torch.nn.MSELoss()
+        self.l2_func = torch.nn.MSELoss(reduction='none')
+        self.stdev = stdev
 
     def forward(self, x, x_mu, z_mu, z_logvar):
         r"""
@@ -23,14 +26,14 @@ class L2VAELoss(torch.nn.Module):
             :z_mu: (B, Cz) encoding mean
             :z_logvar: (B, Cz) encoding variance diagonal
         """
-        # l2_
-        l2_ = self.l2_func(x, x_mu)
+        # l2_ weighted by the variance
+        l2_ = self.l2_func(x, x_mu) / self.stdev**2
 
         # KL divergence in latent space
         kl_ = kl_divergence_unit_normal(z_mu, z_logvar)
 
         ## Mean across batches [B,] -> float
-        l2_ = torch.mean(nll_)
+        l2_ = torch.mean(l2_)
         kl_ = torch.mean(kl_)
 
         ## Log individual loss components if listener passed.
