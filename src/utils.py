@@ -35,7 +35,6 @@ def get_dataset(split="train", dataset_name="mnist"):
     assert split in allowed_splits, "Expected split in {}, but got {}"\
             .format(allowed_splits, split)
 
-    # TODO Add wavelet transformation
     if dataset_name == "celeba":
 
         dataset = CelebA(
@@ -68,7 +67,6 @@ def get_dataset(split="train", dataset_name="mnist"):
                 ConvertImageDtype(torch.float32),
                 lambda img : wavelet_transform_reshape(img, wavelet_tr),
                 CenterCrop(16),
-                lambda img : rescale_to(img, to=(-1,1))#  TODO 
             ])
 
     else:
