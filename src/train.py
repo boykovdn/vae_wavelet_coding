@@ -6,13 +6,14 @@ from supn.ipe_vae import IPE_autoencoder_mu_l
 from model import WaveletVAE
 from trainers.ipe_vae import IPEVAETrainer, WaveletVAETrainer
 from torch.utils.tensorboard import SummaryWriter
+from pytorch_wavelets import DWTInverse
 
 def main():
 
     ENCODING_DIM = 32 #config['ENCODING_DIM']
     DEPTH = 3 #config['DEPTH']
-    batch_size = 64
-    init_num_channels = 32
+    batch_size = 256
+    init_num_channels = 16
     tb_output_dir = "./tb_test_1"
     training_type = "mean_only"
     init_state_path = None #"./checkpoint_mean.model"
@@ -40,11 +41,14 @@ def main():
     # Logging
     # Datapoints unseen during the training process.
     dset_test = get_dataset(split="test")
+
     def image_logging_function(it):
         if it % image_logging_period == 0:
+            ifm = DWTInverse(mode='zero', wave='db2').to(device)
             logging_wavelets_visualization(
                     model,
                     dset_test,
+                    ifm,
                     it,
                     summary_writer)
 
