@@ -3,7 +3,7 @@ from supn.utils import rescale_to
 from transforms import inverse_wavelet_transform
 
 def logging_wavelets_visualization(model, dset, inverse_transform, iteration, 
-        summary_writer, device=0):
+        summary_writer, device=0, use_rescaling=False):
     r"""
     Log a sample of reconstructed wavelet parameters and the corresponding 
     decoded image into tensorboard.
@@ -25,12 +25,23 @@ def logging_wavelets_visualization(model, dset, inverse_transform, iteration,
 
         :device: int
 
+        :use_rescaling: bool, if True then the model training is being done with
+            rescaling transforms and this function will make sure that the model
+            pre-transforms the input before passing it to the network, and then
+            transforms it back so that it can be inverted and visualized.
+
     Returns:
         None
 
         Logs to tensorboard (the summary writer).
     """
     model.eval()
+    if use_rescaling:
+        # This is so that the model knows that the inputs are not scaled, and will
+        # apply the scaling before and after working on the inputs. This way, the
+        # output will have the correct relative scales for inverting and 
+        # visualizing.
+        model.use_rescaling = True
 
     if isinstance(dset[0], tuple):
         inp_shape = dset[0][0].shape # [C,H,W]
@@ -61,5 +72,8 @@ def logging_wavelets_visualization(model, dset, inverse_transform, iteration,
 
     summary_writer.add_images("Inverse wavelet of output mean:",
             rescale_to(img_i, to=(0,1)), iteration, dataformats="NCHW")
+
+    if use_rescaling:
+        model.use_rescaling = False
 
     model.train()

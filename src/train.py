@@ -22,6 +22,7 @@ def main():
     max_iterations = 100000
     learning_rate = 1e-3
     STDEV = 0.05
+    use_rescaling = True # Whether to force all channels to have similar scale during training.
     device=0
 
     summary_writer = SummaryWriter(log_dir=tb_output_dir)
@@ -50,12 +51,14 @@ def main():
                     dset_test,
                     ifm,
                     it,
-                    summary_writer)
+                    summary_writer,
+                    use_rescaling=use_rescaling)
 
     trainer = WaveletVAETrainer(model, 
             summary_writer=summary_writer,
             learning_rate=learning_rate,
-            stdev=STDEV)
+            stdev=STDEV,
+            use_rescaling=use_rescaling)
 
     trainer.train(
                 dataloader, 

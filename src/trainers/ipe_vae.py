@@ -207,7 +207,8 @@ class WaveletVAETrainer:
     def __init__(self, model, 
             summary_writer=None,
             learning_rate=1e-3,
-            stdev=None):
+            stdev=None,
+            use_rescaling=False):
         r"""
         Args:
 
@@ -224,8 +225,14 @@ class WaveletVAETrainer:
                 weigh the KL and L2 terms. This parameter is the standard 
                 deviation, and will enter as a 1/stdev multiplier for the fake
                 Cholesky decomposition.
+
+            :use_rescaling: bool, if True, will apply the fitted rescaling
+                module from the model to the input, so that the model only
+                trains on inputs with the desired scales.
         """
         self.model = model
+        self.use_rescaling = use_rescaling
+
         self.learning_rate = learning_rate
         self.stdev = stdev
 
@@ -311,7 +318,11 @@ class WaveletVAETrainer:
         while True:
     
             for img, _ in dataloader:
+
                 img = img.to(device)
+
+                if self.use_rescaling:
+                    img = self.model.rescale(img)
     
                 x_mu, z_mu, z_logvar = self.model(img)
                 

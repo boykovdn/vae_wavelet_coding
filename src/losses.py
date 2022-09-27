@@ -38,9 +38,14 @@ class L2VAELoss(torch.nn.Module):
 
         ## Log individual loss components if listener passed.
         if self.loss_logging_listener is not None:
+            ch_stds = x.std((0,2,3))
             loss_dict = {
                     'l2' : l2_.item(),
-                    'kl' : kl_.item()
+                    'kl' : kl_.item(),
+                    'std_ll' : ch_stds[0],
+                    'std_lh' : ch_stds[1],
+                    'std_hl' : ch_stds[2],
+                    'std_hh' : ch_stds[3]
                     }
             self.loss_logging_listener([], from_dict=loss_dict)
 

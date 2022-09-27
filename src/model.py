@@ -3,6 +3,7 @@ from supn.ipe_vae_blocks import (
         EncoderModule,
         ReparametrizationModule,
         DecoderModule)
+from utils import RescalingModule
 
 class WaveletVAE(torch.nn.Module):
     r"""
@@ -12,12 +13,22 @@ class WaveletVAE(torch.nn.Module):
 
     def __init__(self, input_shape, encoding_dim, depth=7, dim_h=None, 
             final_mu_activation=None, encoder_kernel_size=3, 
-            init_num_channels=1, output_channels=1):
+            init_num_channels=1, output_channels=1, use_rescaling=False):
         r"""
+        Args:
+            
+            ...
+
+            :use_rescaling: bool, if True then the input will be rescaled
+                before being passed to the rest of the network, and output will
+                be scaled back.
         """
         super().__init__()
 
         assert dim_h is not None
+
+        self.rescale = RescalingModule()
+        self.use_rescaling = use_rescaling
 
         self.encoder = EncoderModule(input_shape, encoding_dim, dim_h, 
                 depth=depth, kernel_size=encoder_kernel_size, 
@@ -33,8 +44,14 @@ class WaveletVAE(torch.nn.Module):
 
     def forward(self, x):
 
+        if self.use_rescaling:
+            x = self.rescale(x)
+
         z_mu, z_logvar = self.encoder(x)
         z_sampled = self.reparametrize(z_mu, z_logvar.exp())
         x_mu = self.mu_decoder(z_sampled)
+
+        if self.use_rescaling:
+            x = self.rescale.invert_scaling(x)
 
         return x_mu, z_mu, z_logvar

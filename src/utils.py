@@ -20,6 +20,55 @@ from supn.utils import rescale_to
 from transforms import wavelet_transform_reshape
 from pytorch_wavelets import DWTForward
 
+class RescalingModule(torch.nn.Module):
+    r"""
+    Scales the mean and variance to 1 of the wavelet channels (all but 0th).
+    """
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.mu = None
+        self.std = None
+        self.update_parameters = True
+
+    def apply_scaling(self, x):
+        r"""
+        Args:
+            :x: [B,C,H,W] torch.Tensor
+
+        Returns:
+            [B,C,H,W] torch.Tensor, mean 0 and var 1 each channel.
+        """
+        if self.update_parameters:
+            # Initialize the mean and std.
+            self.mu = x.mean((0,2,3))[None,][...,None,None].to(x.device) # [1, C, 1,1]
+            self.std = x.std((0,2,3))[None,][...,None,None].to(x.device) # [1, C, 1,1]
+
+            self.mu.requires_grad = False
+            self.std.requires_grad = False
+
+            self.update_parameters = False
+
+        out_ = (x - self.mu) / self.std
+
+        return out_
+
+    def invert_scaling(self, x):
+        r"""
+        Args:
+            :x: [B,C,H,W] mean 0 and var 1 each channel
+
+        Returns:
+            [B,C,H,W] rescaled and mean added back.
+        """
+        return (x * self.std) + self.mu
+
+    def __call__(self, x):
+
+        return self.apply_scaling(x)
+
 def get_dataset(split="train", dataset_name="mnist"):
     r"""
     Handles loading the dataset object and adding the relevant transforms to it.
