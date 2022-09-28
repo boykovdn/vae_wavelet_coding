@@ -208,7 +208,8 @@ class WaveletVAETrainer:
             summary_writer=None,
             learning_rate=1e-3,
             stdev=None,
-            use_rescaling=False):
+            use_rescaling=False,
+            l1_weight=0.):
         r"""
         Args:
 
@@ -229,9 +230,12 @@ class WaveletVAETrainer:
             :use_rescaling: bool, if True, will apply the fitted rescaling
                 module from the model to the input, so that the model only
                 trains on inputs with the desired scales.
+
+            :l1_weight: float, weighting of the l1 regularization in the loss.
         """
         self.model = model
         self.use_rescaling = use_rescaling
+        self.l1_weight = l1_weight
 
         self.learning_rate = learning_rate
         self.stdev = stdev
@@ -242,9 +246,9 @@ class WaveletVAETrainer:
             listener = None
 
         if stdev is None:
-            self.loss = L2VAELoss(loss_logging_listener = listener)
+            self.loss = L2VAELoss(loss_logging_listener = listener, l1_weight=l1_weight)
         else:
-            self.loss = L2VAELoss(loss_logging_listener = listener, stdev=stdev)
+            self.loss = L2VAELoss(loss_logging_listener = listener, stdev=stdev, l1_weight=l1_weight)
 
     def create_new_optimizer(self):
         r"""

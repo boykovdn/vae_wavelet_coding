@@ -22,6 +22,7 @@ def main():
     max_iterations = 100000
     learning_rate = 1e-3
     STDEV = 0.05
+    l1_weight = 1.
     use_rescaling = True # Whether to force all channels to have similar scale during training.
     device=0
 
@@ -58,7 +59,8 @@ def main():
             summary_writer=summary_writer,
             learning_rate=learning_rate,
             stdev=STDEV,
-            use_rescaling=use_rescaling)
+            use_rescaling=use_rescaling,
+            l1_weight=l1_weight)
 
     trainer.train(
                 dataloader, 
