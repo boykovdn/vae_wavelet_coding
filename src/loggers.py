@@ -61,6 +61,7 @@ def logging_wavelets_visualization(model, dset, inverse_transform, iteration,
         out_mu = model_outp_[0]
         # Apply inverse wavelet transform to the output for visualization:
         img_i = inverse_wavelet_transform(out_mu, inverse_transform)
+        img_i_target = inverse_wavelet_transform(inputs, inverse_transform)
 
     for idx_c in range(inputs.shape[1]):
         summary_writer.add_images("Input ch {}".format(idx_c), 
@@ -70,8 +71,14 @@ def logging_wavelets_visualization(model, dset, inverse_transform, iteration,
         summary_writer.add_images("SUPN Mean wavelet channel {}".format(idx_c),
                 rescale_to(out_mu[:,idx_c].unsqueeze(1), to=(0,1)), iteration, dataformats="NCHW")
 
-    summary_writer.add_images("Inverse wavelet of output mean:",
-            rescale_to(img_i, to=(0,1)), iteration, dataformats="NCHW")
+    summary_writer.add_images("Inverse wavelet of output mean, clipped to (0,1):",
+            img_i.clip(0,1), iteration, dataformats="NCHW")
+
+    # I've added clipping to the target image in case any negative values are
+    # encountered, because there is an inaccuracy of about 1e-7 in the wavelet
+    # reconstruction. The images are expected to be in (0,1).
+    summary_writer.add_images("Inverse wavelet of input params:",
+            img_i_target.clip(0,999), iteration, dataformats="NCHW")
 
     if use_rescaling:
         model.use_rescaling = False
