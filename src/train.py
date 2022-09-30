@@ -10,20 +10,21 @@ from pytorch_wavelets import DWTInverse
 
 def main():
 
-    ENCODING_DIM = 32 #config['ENCODING_DIM']
+    ENCODING_DIM = 64 #config['ENCODING_DIM']
     DEPTH = 3 #config['DEPTH']
     batch_size = 256
-    init_num_channels = 16
-    tb_output_dir = "./tb_test_1"
-    training_type = "mean_only"
-    init_state_path = None #"./checkpoint_mean.model"
-    save_state_path = "./checkpoint.model"
+    init_num_channels = 32
+    tb_output_dir = "./tb_test_resid"
+    training_type = "vae_full" # TODO This shouldn't matter if not using SUPN, keep to full.
+    init_state_path = None #"./checkpoint.model" # TODO For pdb testing of output ranges.
+    save_state_path = "./checkpoint_resid.model"
     image_logging_period = 100
     max_iterations = 100000
-    learning_rate = 1e-3
+    learning_rate = 1e-4
     STDEV = 0.05
     l1_weight = 1.
     use_rescaling = True # Whether to force all channels to have similar scale during training.
+    use_residual_blocks = True
     device=0
 
     summary_writer = SummaryWriter(log_dir=tb_output_dir)
@@ -37,7 +38,8 @@ def main():
                 dim_h=ENCODING_DIM, 
                 depth=DEPTH,
                 init_num_channels=init_num_channels,
-                output_channels=4 # The number of wavelet parameters per location.
+                output_channels=4, # The number of wavelet parameters per location.
+                use_residual_blocks=use_residual_blocks
             ).to(device)
 
     # Logging
