@@ -49,3 +49,31 @@ def inverse_wavelet_transform(wimg, dwti_module):
     img = dwti_module( (lowpass, highpass) )
 
     return img
+
+class OddReLU(torch.nn.Module):
+    r"""
+    If -eps < x < eps then set x = 0. Else x = x - sign(x) * eps. This function
+    is used to encourage sparsity in the neural network output when put in the 
+    last layer. Implemented as the sum of two transformed ReLU activations.
+    """
+
+    def __init__(self, eps=1e-2, trainable=False, device='cpu'):
+        r"""
+        Args:
+            :eps: float
+
+            :trainable: bool, whether the threshold for setting to 0 should be
+                a learnable parameter.
+
+            :device: str identifier for host or gpu.
+        """
+        super().__init__()
+
+        self.relu = torch.nn.ReLU()
+        self.eps = torch.Tensor([eps]).to(device)
+
+        if trainable:
+            self.eps.requires_grad = True
+
+    def forward(self, x):
+        return self.relu(x - self.eps) - self.relu( - self.eps - x )
