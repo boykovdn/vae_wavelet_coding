@@ -31,16 +31,17 @@ class L2VAELoss(torch.nn.Module):
             :z_logvar: (B, Cz) encoding variance diagonal
         """
         # l2_ weighted by the variance
-        l2_ = self.l2_func(x[:, 0:1], x_mu[:, 0:1]) / self.stdev**2
+        # l2_ = self.l2_func(x[:, 0:1], x_mu[:, 0:1]) / self.stdev**2
+        l2_ = 0
 
         # L1 loss for high pass coefs
-        l1_ = self.l1_weight * (x[:,1:] - x_mu[:,1:]).abs().sum((1,2,3)) # [B,C,H,W] -> [B,]
+        l1_ = self.l1_weight * (x - x_mu).abs().sum((1,2,3)) # [B,C,H,W] -> [B,]
 
         # KL divergence in latent space
         kl_ = kl_divergence_unit_normal(z_mu, z_logvar)
 
         ## Mean across batches [B,] -> float
-        l2_ = torch.mean(l2_)
+        #l2_ = torch.mean(l2_)
         kl_ = torch.mean(kl_)
         l1_ = torch.mean(l1_)
 
@@ -48,14 +49,14 @@ class L2VAELoss(torch.nn.Module):
         if self.loss_logging_listener is not None:
             ch_stds = x.std((0,2,3))
             loss_dict = {
-                    'l2' : l2_.item(),
+                    #'l2' : l2_.item(),
                     'kl' : kl_.item(),
                     'l1' : l1_.item(),
-                    'std_ll' : ch_stds[0],
-                    'std_lh' : ch_stds[1],
-                    'std_hl' : ch_stds[2],
-                    'std_hh' : ch_stds[3]
+                    #'std_ll' : ch_stds[0],
+                    #'std_lh' : ch_stds[1],
+                    #'std_hl' : ch_stds[2],
+                    #'std_hh' : ch_stds[3]
                     }
             self.loss_logging_listener([], from_dict=loss_dict)
 
-        return l2_ + kl_ + l1_
+        return l2_ + 0*kl_ + l1_

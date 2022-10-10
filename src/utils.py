@@ -116,6 +116,7 @@ def get_dataset(split="train", dataset_name="mnist"):
                 ConvertImageDtype(torch.float32),
                 lambda img : wavelet_transform_reshape(img, wavelet_tr),
                 CenterCrop(16),
+                lambda img : img[-1].unsqueeze(0) # Select high-high channel only.
             ])
 
     else:
