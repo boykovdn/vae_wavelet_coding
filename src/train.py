@@ -7,6 +7,7 @@ from model import WaveletVAE
 from trainers.ipe_vae import IPEVAETrainer, WaveletVAETrainer
 from torch.utils.tensorboard import SummaryWriter
 from pytorch_wavelets import DWTInverse
+from transforms import OddReLU
 
 def main():
 
@@ -14,10 +15,10 @@ def main():
     DEPTH = 3 #config['DEPTH']
     batch_size = 256
     init_num_channels = 32
-    tb_output_dir = "./tb_test_resid"
+    tb_output_dir = "./tb_test_hh_test"
     training_type = "vae_full" # TODO This shouldn't matter if not using SUPN, keep to full.
-    init_state_path = None #"./checkpoint.model" # TODO For pdb testing of output ranges.
-    save_state_path = "./checkpoint_resid.model"
+    init_state_path = "./checkpoint_hh.model" # TODO For pdb testing of output ranges.
+    save_state_path = "./checkpoint_hh_test.model"
     image_logging_period = 100
     max_iterations = 100000
     learning_rate = 1e-4
@@ -25,6 +26,7 @@ def main():
     l1_weight = 1.
     use_rescaling = True # Whether to force all channels to have similar scale during training.
     use_residual_blocks = True
+    odd_relu_eps = None #0.1
     device=0
 
     summary_writer = SummaryWriter(log_dir=tb_output_dir)
@@ -32,13 +34,21 @@ def main():
     dataloader = get_dataloader(batch_size=batch_size)
     input_shape = dataloader.dataset[0][0].shape # (1, 128, 128)
 
+    if odd_relu_eps is not None:
+        odd_relu_factory = lambda : \
+                OddReLU(eps=odd_relu_eps, trainable=False, 
+                        device="cuda:{}".format(device))
+    else:
+        odd_relu_factory = None
+
     model = WaveletVAE(
                 input_shape, 
                 ENCODING_DIM, 
                 dim_h=ENCODING_DIM, 
                 depth=DEPTH,
                 init_num_channels=init_num_channels,
-                output_channels=4, # The number of wavelet parameters per location.
+                final_mu_activation = odd_relu_factory,
+                output_channels=1, # The number of wavelet parameters per location.
                 use_residual_blocks=use_residual_blocks
             ).to(device)
 
