@@ -1,6 +1,6 @@
 from supn.logging.ipe_vae import LoggingScalarListener
 from supn.losses.ipe_vae import NegativeELBOLoss
-from losses import L2VAELoss
+from ..losses import L2VAELoss
 import torch
 from tqdm import tqdm
 

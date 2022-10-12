@@ -17,7 +17,7 @@ from torchvision.transforms import (
         ConvertImageDtype)
 from supn.utils import rescale_to
 
-from transforms import wavelet_transform_reshape
+from .transforms import wavelet_transform_reshape
 from pytorch_wavelets import DWTForward
 
 class RescalingModule(torch.nn.Module):
