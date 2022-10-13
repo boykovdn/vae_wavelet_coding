@@ -3,7 +3,7 @@ from supn.ipe_vae_blocks import (
         EncoderModule,
         ReparametrizationModule,
         DecoderModule)
-from .utils import RescalingModule
+from vae_wavelet_coding.utils import RescalingModule
 
 class WaveletVAE(torch.nn.Module):
     r"""
