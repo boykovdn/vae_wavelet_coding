@@ -88,9 +88,6 @@ def logging_wavelets_visualization(model, dset, inverse_transform, iteration,
         img_i[0,0]
         )) # grayscale
 
-    import matplotlib.pyplot as plt
-    import pdb; pdb.set_trace()
-
     # Log images here
     summary_writer.log({
                 "Input wavelets" : inputs_list,
