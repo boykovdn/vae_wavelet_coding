@@ -209,7 +209,8 @@ class WaveletVAETrainer:
             learning_rate=1e-3,
             stdev=None,
             use_rescaling=False,
-            laplace_b=1.):
+            laplace_b=1.,
+            kl_weight=1.):
         r"""
         Args:
 
@@ -235,18 +236,29 @@ class WaveletVAETrainer:
                 in the loss, effectively, but the weight is calculated as the
                 inverse of this number. This number is the b parameters in the
                 definition of the Laplace distribution.
+
+            :kl_weight: float, weighting factor for the KL term. Will be 1.
+                most of the time unless something experimental is being done.
         """
         self.model = model
         self.use_rescaling = use_rescaling
         self.laplace_b = laplace_b
+        self.kl_weight = kl_weight
 
         self.learning_rate = learning_rate
         self.stdev = stdev
 
         if stdev is None:
-            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, laplace_b=laplace_b)
+            self.loss = L2L1VAELoss(
+                    loss_logging_listener=summary_writer, 
+                    laplace_b=laplace_b,
+                    kl_weight=kl_weight)
         else:
-            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, stdev=stdev, laplace_b=laplace_b)
+            self.loss = L2L1VAELoss(
+                    loss_logging_listener=summary_writer, 
+                    stdev=stdev, 
+                    laplace_b=laplace_b,
+                    kl_weight=kl_weight)
 
     def create_new_optimizer(self):
         r"""

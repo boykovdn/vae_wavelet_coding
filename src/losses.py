@@ -7,7 +7,8 @@ class L2L1VAELoss(torch.nn.Module):
     is appled in the low frequency channel, and the L1 loss on the rest.
     """
 
-    def __init__(self, stdev=1., laplace_b=1., loss_logging_listener=None):
+    def __init__(self, stdev=1., laplace_b=1., kl_weight=1.,
+            loss_logging_listener=None):
         r"""
         :loss_logging_listener: callable, used to log individual components of loss.
 
@@ -16,12 +17,15 @@ class L2L1VAELoss(torch.nn.Module):
             distribution definition.
 
         :stdev: float, the standard deviation, used to scale the L2 loss.
+
+        :kl_weight: float, the KL term weighting factor, default 1.
         """
         super().__init__()
 
         self.loss_logging_listener = loss_logging_listener
         self.l2_func = torch.nn.MSELoss(reduction='none')
         self.laplace_b = laplace_b
+        self.kl_weight = kl_weight
         self.stdev = stdev
 
     def forward(self, x, x_mu, z_mu, z_logvar):
@@ -40,7 +44,7 @@ class L2L1VAELoss(torch.nn.Module):
         l1_ = (x[:,1:] - x_mu[:,1:]).abs().sum((1,2,3)) / self.laplace_b 
 
         # KL divergence in latent space
-        kl_ = kl_divergence_unit_normal(z_mu, z_logvar)
+        kl_ = self.kl_weight * kl_divergence_unit_normal(z_mu, z_logvar)
 
         ## Mean across batches [B,] -> float
         l2_ = torch.mean(l2_)

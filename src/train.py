@@ -24,6 +24,7 @@ def main():
     learning_rate = 1e-4
     STDEV = 1.
     laplace_b = 1.
+    kl_weight = 1.
     use_rescaling = True # Whether to force all channels to have similar scale during training.
     use_residual_blocks = True
     device=0
@@ -34,7 +35,8 @@ def main():
                 "batch_size" : batch_size,
                 "learning_rage" : learning_rate,
                 "gauss_std" : STDEV,
-                "laplace_b" : laplace_b
+                "laplace_b" : laplace_b,
+                "kl_weight" : kl_weight
                 }
             )
 
@@ -71,9 +73,10 @@ def main():
     trainer = WaveletVAETrainer(model, 
             summary_writer=wandb,
             learning_rate=learning_rate,
-            stdev=STDEV,
             use_rescaling=use_rescaling,
-            laplace_b=laplace_b)
+            stdev=STDEV,
+            laplace_b=laplace_b,
+            kl_weight=kl_weight)
 
     trainer.train(
                 dataloader, 
