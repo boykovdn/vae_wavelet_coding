@@ -8,15 +8,16 @@ from trainers.ipe_vae import IPEVAETrainer, WaveletVAETrainer
 from torch.utils.tensorboard import SummaryWriter
 from pytorch_wavelets import DWTInverse
 
+import wandb
+
 def main():
 
     ENCODING_DIM = 64 #config['ENCODING_DIM']
     DEPTH = 3 #config['DEPTH']
     batch_size = 256
     init_num_channels = 32
-    tb_output_dir = "./tb_test_resid"
     training_type = "vae_full" # TODO This shouldn't matter if not using SUPN, keep to full.
-    init_state_path = None #"./checkpoint.model" # TODO For pdb testing of output ranges.
+    init_state_path = "./checkpoint_resid.model" # TODO For pdb testing of output ranges.
     save_state_path = "./checkpoint_resid.model"
     image_logging_period = 100
     max_iterations = 100000
@@ -27,7 +28,15 @@ def main():
     use_residual_blocks = True
     device=0
 
-    summary_writer = SummaryWriter(log_dir=tb_output_dir)
+    wandb.init(
+            project="test-supn",
+            config={
+                "batch_size" : batch_size,
+                "learning_rage" : learning_rate,
+                "init_num_channels" : init_num_channels,
+                "bottleneck_z_dimension" : ENCODING_DIM
+                }
+            )
 
     dataloader = get_dataloader(batch_size=batch_size)
     input_shape = dataloader.dataset[0][0].shape # (1, 128, 128)
@@ -42,6 +51,8 @@ def main():
                 use_residual_blocks=use_residual_blocks
             ).to(device)
 
+    wandb.watch(model)
+
     # Logging
     # Datapoints unseen during the training process.
     dset_test = get_dataset(split="test")
@@ -54,11 +65,11 @@ def main():
                     dset_test,
                     ifm,
                     it,
-                    summary_writer,
+                    wandb,
                     use_rescaling=use_rescaling)
 
     trainer = WaveletVAETrainer(model, 
-            summary_writer=summary_writer,
+            summary_writer=wandb,
             learning_rate=learning_rate,
             stdev=STDEV,
             use_rescaling=use_rescaling,

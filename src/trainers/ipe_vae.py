@@ -1,6 +1,6 @@
 from supn.logging.ipe_vae import LoggingScalarListener
 from supn.losses.ipe_vae import NegativeELBOLoss
-from ..losses import L2VAELoss
+from vae_wavelet_coding.losses import L2L1VAELoss
 import torch
 from tqdm import tqdm
 
@@ -240,15 +240,10 @@ class WaveletVAETrainer:
         self.learning_rate = learning_rate
         self.stdev = stdev
 
-        if summary_writer is not None:
-            listener = LoggingScalarListener(summary_writer)
-        else:
-            listener = None
-
         if stdev is None:
-            self.loss = L2VAELoss(loss_logging_listener = listener, l1_weight=l1_weight)
+            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, l1_weight=l1_weight)
         else:
-            self.loss = L2VAELoss(loss_logging_listener = listener, stdev=stdev, l1_weight=l1_weight)
+            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, stdev=stdev, l1_weight=l1_weight)
 
     def create_new_optimizer(self):
         r"""
@@ -329,7 +324,7 @@ class WaveletVAETrainer:
                     img = self.model.rescale(img)
     
                 x_mu, z_mu, z_logvar = self.model(img)
-                
+
                 loss_val = self.loss(img, x_mu, z_mu, z_logvar)
     
                 loss_val.backward()

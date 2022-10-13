@@ -1,9 +1,10 @@
 import torch
 from supn.losses.ipe_vae import kl_divergence_unit_normal
 
-class L2VAELoss(torch.nn.Module):
+class L2L1VAELoss(torch.nn.Module):
     r"""
-    L2 + KL loss with listener to log components into tensorboard.
+    L2 + KL + L1 loss with listener to log components into tensorboard. The L2
+    is appled in the low frequency channel, and the L1 loss on the rest.
     """
 
     def __init__(self, stdev=1., l1_weight=0., loss_logging_listener=None):
@@ -56,6 +57,7 @@ class L2VAELoss(torch.nn.Module):
                     'std_hl' : ch_stds[2],
                     'std_hh' : ch_stds[3]
                     }
-            self.loss_logging_listener([], from_dict=loss_dict)
+            self.loss_logging_listener.log(loss_dict)
+            #self.loss_logging_listener([], from_dict=loss_dict)
 
         return l2_ + kl_ + l1_
