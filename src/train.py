@@ -22,8 +22,8 @@ def main():
     image_logging_period = 100
     max_iterations = 100000
     learning_rate = 1e-4
-    STDEV = 0.05
-    l1_weight = 1.
+    STDEV = 1.
+    laplace_b = 1.
     use_rescaling = True # Whether to force all channels to have similar scale during training.
     use_residual_blocks = True
     device=0
@@ -33,8 +33,8 @@ def main():
             config={
                 "batch_size" : batch_size,
                 "learning_rage" : learning_rate,
-                "init_num_channels" : init_num_channels,
-                "bottleneck_z_dimension" : ENCODING_DIM
+                "gauss_std" : STDEV,
+                "laplace_b" : laplace_b
                 }
             )
 
@@ -73,7 +73,7 @@ def main():
             learning_rate=learning_rate,
             stdev=STDEV,
             use_rescaling=use_rescaling,
-            l1_weight=l1_weight)
+            laplace_b=laplace_b)
 
     trainer.train(
                 dataloader, 

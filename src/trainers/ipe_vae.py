@@ -209,7 +209,7 @@ class WaveletVAETrainer:
             learning_rate=1e-3,
             stdev=None,
             use_rescaling=False,
-            l1_weight=0.):
+            laplace_b=1.):
         r"""
         Args:
 
@@ -231,19 +231,22 @@ class WaveletVAETrainer:
                 module from the model to the input, so that the model only
                 trains on inputs with the desired scales.
 
-            :l1_weight: float, weighting of the l1 regularization in the loss.
+            :laplace_b: float, controls the weighting of the l1 regularization 
+                in the loss, effectively, but the weight is calculated as the
+                inverse of this number. This number is the b parameters in the
+                definition of the Laplace distribution.
         """
         self.model = model
         self.use_rescaling = use_rescaling
-        self.l1_weight = l1_weight
+        self.laplace_b = laplace_b
 
         self.learning_rate = learning_rate
         self.stdev = stdev
 
         if stdev is None:
-            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, l1_weight=l1_weight)
+            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, laplace_b=laplace_b)
         else:
-            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, stdev=stdev, l1_weight=l1_weight)
+            self.loss = L2L1VAELoss(loss_logging_listener = summary_writer, stdev=stdev, laplace_b=laplace_b)
 
     def create_new_optimizer(self):
         r"""
