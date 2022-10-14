@@ -17,6 +17,7 @@ from torchvision.transforms import (
         ConvertImageDtype)
 from supn.utils import rescale_to
 
+from vae_wavelet_coding.dataset import MNIST_wavelets
 from vae_wavelet_coding.transforms import wavelet_transform_reshape
 from pytorch_wavelets import DWTForward
 
@@ -69,7 +70,7 @@ class RescalingModule(torch.nn.Module):
 
         return self.apply_scaling(x)
 
-def get_dataset(split="train", dataset_name="mnist"):
+def get_dataset(split="train", dataset_name="mnist", load_into_mem=True):
     r"""
     Handles loading the dataset object and adding the relevant transforms to it.
 
@@ -78,6 +79,11 @@ def get_dataset(split="train", dataset_name="mnist"):
             PyTorch.
 
         :dataset_name: str, identifier for which dataset to use.
+
+        :load_into_mem: bool, if True will load the datapoints into RAM if the
+            dataset class allows it. This parameter is exposed in case I ever
+            need to work with datasets too large for memory (which is not 
+            expected).
     """
     allowed_splits = ["train", "test"]
 
@@ -104,19 +110,33 @@ def get_dataset(split="train", dataset_name="mnist"):
 
         train_split = split == "train"
 
-        wavelet_tr = DWTForward(J=1, mode='zero', wave='db2')
+        wavelet_tr = lambda img : wavelet_transform_reshape(
+                img, 
+                DWTForward(J=1, mode='zero', wave='db2'))
 
-        dataset = MNIST(
-                root=Path(__file__).parents[1],
-                download=True,
-                train=train_split)
+        pre_transforms = Compose([
+            PILToTensor(),
+            ConvertImageDtype(torch.float32)
+        ])
 
-        dataset.transform = Compose([
-                PILToTensor(),
-                ConvertImageDtype(torch.float32),
-                lambda img : wavelet_transform_reshape(img, wavelet_tr),
-                CenterCrop(16),
-            ])
+        post_transforms = Compose([
+            CenterCrop(16),
+        ])
+
+        if load_into_mem:
+            print("Loading dataset into memory!")
+
+        dataset = MNIST_wavelets(
+                Path(__file__).parents[1] / Path(
+                    "MNIST_p_{}".format(split)),
+                root = Path(__file__).parents[1], # root for raw MNIST dataset
+                load_all = load_into_mem,
+                wavelet_transform = wavelet_tr,
+                mnist_raw_transform = pre_transforms,
+                mnist_after_transform = post_transforms,
+                download = True,
+                train = train_split
+            )
 
     else:
         raise Exception(
