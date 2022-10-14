@@ -97,7 +97,9 @@ def logging_wavelets_visualization(model, dset, inverse_transform, iteration,
                 "Input highpass histogram" : summary_writer.Histogram(
                     np_histogram=np.histogram(inputs[0,-1].cpu())),
                 "Output highpass histogram" : summary_writer.Histogram(
-                    np_histogram=np.histogram(out_mu[0,-1].cpu()))
+                    np_histogram=np.histogram(out_mu[0,-1].cpu())),
+                "Output lowpass histogram" : summary_writer.Histogram(
+                    np_histogram=np.histogram(out_mu[0,0].cpu()))
             })
 
     if use_rescaling:
