@@ -36,22 +36,27 @@ class L2L1VAELoss(torch.nn.Module):
             :z_mu: (B, Cz) encoding mean
             :z_logvar: (B, Cz) encoding variance diagonal
         """
-        # l2_ weighted by the variance
-        l2_ = self.l2_func(x[:, 0:1], x_mu[:, 0:1]) / self.stdev**2
-
-        # L1 loss for high pass coefs, weighted by the laplace parameter b.
+        # l2_ norm ( later weighted by the variance )
         # [B,C,H,W] -> [B,]
-        l1_ = (x[:,1:] - x_mu[:,1:]).abs().sum((1,2,3)) / self.laplace_b 
+        l2_ = self.l2_func(x[:, 0:1], x_mu[:, 0:1])
+
+        # L1 loss for high pass coefs, ( later weighted by the laplace 
+        # parameter b )
+        # [B,C,H,W] -> [B,]
+        l1_ = (x[:,1:] - x_mu[:,1:]).abs().sum((1,2,3))
 
         # KL divergence in latent space
-        kl_ = self.kl_weight * kl_divergence_unit_normal(z_mu, z_logvar)
+        kl_ = kl_divergence_unit_normal(z_mu, z_logvar)
 
         ## Mean across batches [B,] -> float
         l2_ = torch.mean(l2_)
         kl_ = torch.mean(kl_)
         l1_ = torch.mean(l1_)
 
-        ## Log individual loss components if listener passed.
+        ## Log individual loss components if listener passed. Here we make sure
+        # to log the unweighted norms and the KL divergence, so that the models
+        # with different weights during optimization can be comparable. The
+        # weights are important for calculating the ELBO, however.
         if self.loss_logging_listener is not None:
 
             loss_dict = {
@@ -62,4 +67,5 @@ class L2L1VAELoss(torch.nn.Module):
 
             self.loss_logging_listener.log(loss_dict)
 
-        return l2_ + kl_ + l1_
+        # Return the weighted sum.
+        return (l2_  / self.stdev**2) + (l1_ / self.laplace_b) + (self.kl_weight * kl_)
