@@ -10,17 +10,22 @@ init_num_channels = 32
 use_residual_blocks = True
 use_rescaling = True
 batch_size = 128
-max_iterations = 1000
+max_iterations = 5
 device = "cuda:0"
 
 @pytest.fixture
 def dataloader():
 
-    return get_dataloader(batch_size=batch_size)
+    return get_dataloader(
+            batch_size=batch_size, 
+            precompute_path="/mnt/fast0/biv20/repos/vae_wavelet_coding")
 
 def test_profiling(dataloader):
 
     input_shape = dataloader.dataset[0][0].shape
+
+    import matplotlib.pyplot as plt 
+    import pdb; pdb.set_trace()
 
     model = WaveletVAE(
             input_shape,

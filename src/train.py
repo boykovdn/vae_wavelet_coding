@@ -18,29 +18,33 @@ def main():
     init_num_channels = 32
     training_type = "vae_full" # TODO This shouldn't matter if not using SUPN, keep to full.
     init_state_path = "./checkpoint_resid.model" # TODO For pdb testing of output ranges.
-    save_state_path = "./checkpoint_resid.model"
+    save_state_path = None
     image_logging_period = 100
     max_iterations = 100000
     learning_rate = 1e-4
-    STDEV = 1.
+    STDEV = 0.5
     laplace_b = 1.
-    kl_weight = 1.
+    kl_weight = 0.
+    wavelet_type = 'haar2'
+    precompute_path = "/mnt/fast0/biv20/repos/vae_wavelet_coding"
     use_rescaling = True # Whether to force all channels to have similar scale during training.
     use_residual_blocks = True
-    device=0
+    device=4
 
     wandb.init(
-            project="test-supn",
+            project="varying-stdev",
             config={
                 "batch_size" : batch_size,
                 "learning_rage" : learning_rate,
                 "gauss_std" : STDEV,
                 "laplace_b" : laplace_b,
-                "kl_weight" : kl_weight
+                "kl_weight" : kl_weight,
+                "wavelet" : wavelet_type
                 }
             )
 
-    dataloader = get_dataloader(batch_size=batch_size)
+    dataloader = get_dataloader(batch_size=batch_size, wavelet_type=wavelet_type,
+            precompute_path=precompute_path)
     input_shape = dataloader.dataset[0][0].shape # (1, 128, 128)
 
     model = WaveletVAE(
@@ -68,7 +72,8 @@ def main():
                     ifm,
                     it,
                     wandb,
-                    use_rescaling=use_rescaling)
+                    use_rescaling=use_rescaling,
+                    device=device)
 
     trainer = WaveletVAETrainer(model, 
             summary_writer=wandb,
@@ -82,7 +87,7 @@ def main():
                 dataloader, 
                 save_state_path,
                 image_logging=image_logging_function, 
-                device=0, 
+                device=device, 
                 max_iterations=max_iterations,
                 init_state_path=init_state_path
             )

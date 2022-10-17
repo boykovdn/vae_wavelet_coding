@@ -24,6 +24,8 @@ from pytorch_wavelets import DWTForward
 class RescalingModule(torch.nn.Module):
     r"""
     Scales the mean and variance to 1 of the wavelet channels (all but 0th).
+    It is a part of the model, and the scaling parameters are only set once,
+    the first time this transform is applied.
     """
 
     def __init__(self):
@@ -32,6 +34,9 @@ class RescalingModule(torch.nn.Module):
 
         self.mu = None
         self.std = None
+
+        # Flag that determines whether the mu and std parameters will be
+        # updated on the next forward pass of the transform.
         self.update_parameters = True
 
     def apply_scaling(self, x):
@@ -70,7 +75,8 @@ class RescalingModule(torch.nn.Module):
 
         return self.apply_scaling(x)
 
-def get_dataset(split="train", dataset_name="mnist", load_into_mem=True):
+def get_dataset(split="train", dataset_name="mnist", load_into_mem=True, 
+        precompute_path = None, wavelet_type='db2'):
     r"""
     Handles loading the dataset object and adding the relevant transforms to it.
 
@@ -84,6 +90,9 @@ def get_dataset(split="train", dataset_name="mnist", load_into_mem=True):
             dataset class allows it. This parameter is exposed in case I ever
             need to work with datasets too large for memory (which is not 
             expected).
+
+        :precompute_path: str or Path, precomputation directory, if None will
+            use the current directory.
     """
     allowed_splits = ["train", "test"]
 
@@ -112,7 +121,7 @@ def get_dataset(split="train", dataset_name="mnist", load_into_mem=True):
 
         wavelet_tr = lambda img : wavelet_transform_reshape(
                 img, 
-                DWTForward(J=1, mode='zero', wave='db2'))
+                DWTForward(J=1, mode='zero', wave=wavelet_type))
 
         pre_transforms = Compose([
             PILToTensor(),
@@ -126,10 +135,13 @@ def get_dataset(split="train", dataset_name="mnist", load_into_mem=True):
         if load_into_mem:
             print("Loading dataset into memory!")
 
+        if precompute_path is None:
+            precompute_path = "./"
+
         dataset = MNIST_wavelets(
-                Path(__file__).parents[1] / Path(
+                Path(precompute_path) / Path(
                     "MNIST_p_{}".format(split)),
-                root = Path(__file__).parents[1], # root for raw MNIST dataset
+                root = Path(precompute_path), # root for raw MNIST dataset
                 load_all = load_into_mem,
                 wavelet_transform = wavelet_tr,
                 mnist_raw_transform = pre_transforms,
@@ -145,7 +157,8 @@ def get_dataset(split="train", dataset_name="mnist", load_into_mem=True):
 
     return dataset
 
-def get_dataloader(batch_size=64, split="train"):
+def get_dataloader(batch_size=64, split="train", precompute_path=None,
+        wavelet_type='db2'):
     r"""
     By default expecting the celeba dataset to be located at the root
     of the directory, else it will try to download it, possibly unsuccessfully
@@ -154,7 +167,8 @@ def get_dataloader(batch_size=64, split="train"):
     Dataset transforms make the images center-cropped 128x128 size and
     variance-normalized to mean 0, var 1, single-precision, grayscale.
     """
-    dataset = get_dataset(split=split)
+    dataset = get_dataset(split=split, precompute_path=precompute_path,
+            wavelet_type=wavelet_type)
 
     dataloader = DataLoader(dataset, batch_size=batch_size)
 
