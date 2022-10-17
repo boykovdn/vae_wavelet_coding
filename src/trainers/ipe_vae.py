@@ -208,7 +208,6 @@ class WaveletVAETrainer:
             summary_writer=None,
             learning_rate=1e-3,
             stdev=None,
-            use_rescaling=False,
             laplace_b=1.,
             kl_weight=1.):
         r"""
@@ -228,10 +227,6 @@ class WaveletVAETrainer:
                 deviation, and will enter as a 1/stdev multiplier for the fake
                 Cholesky decomposition.
 
-            :use_rescaling: bool, if True, will apply the fitted rescaling
-                module from the model to the input, so that the model only
-                trains on inputs with the desired scales.
-
             :laplace_b: float, controls the weighting of the l1 regularization 
                 in the loss, effectively, but the weight is calculated as the
                 inverse of this number. This number is the b parameters in the
@@ -241,7 +236,6 @@ class WaveletVAETrainer:
                 most of the time unless something experimental is being done.
         """
         self.model = model
-        self.use_rescaling = use_rescaling
         self.laplace_b = laplace_b
         self.kl_weight = kl_weight
 
@@ -335,9 +329,6 @@ class WaveletVAETrainer:
 
                 img = img.to(device)
 
-                if self.use_rescaling:
-                    img = self.model.rescale(img)
-    
                 x_mu, z_mu, z_logvar = self.model(img)
 
                 loss_val = self.loss(img, x_mu, z_mu, z_logvar)

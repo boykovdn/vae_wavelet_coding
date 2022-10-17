@@ -32,10 +32,10 @@ class RescalingModule(torch.nn.Module):
 
         super().__init__()
 
-        self.mu = None
-        self.std = None
+        #self.mu = None
+        self.var = None
 
-        # Flag that determines whether the mu and std parameters will be
+        # Flag that determines whether the mu and variance parameters will be
         # updated on the next forward pass of the transform.
         self.update_parameters = True
 
@@ -48,16 +48,18 @@ class RescalingModule(torch.nn.Module):
             [B,C,H,W] torch.Tensor, mean 0 and var 1 each channel.
         """
         if self.update_parameters:
-            # Initialize the mean and std.
-            self.mu = x.mean((0,2,3))[None,][...,None,None].to(x.device) # [1, C, 1,1]
-            self.std = x.std((0,2,3))[None,][...,None,None].to(x.device) # [1, C, 1,1]
+            # Initialize the mean and var.
+            #self.mu = x.mean((0,2,3))[None,][...,None,None].to(x.device) # [1, C, 1,1]
+            self.var = x.abs().mean((0,2,3))[None,][...,None,None].to(x.device) # [1, C, 1,1]
+            self.var[:,0] = 1. # Ensure that the low-low channel is not scaled.
 
-            self.mu.requires_grad = False
-            self.std.requires_grad = False
+            #self.mu.requires_grad = False
+            self.var.requires_grad = False
 
             self.update_parameters = False
 
-        out_ = (x - self.mu) / self.std
+        #out_ = (x - self.mu) / self.std
+        out_ = x / self.var
 
         return out_
 
@@ -69,7 +71,8 @@ class RescalingModule(torch.nn.Module):
         Returns:
             [B,C,H,W] rescaled and mean added back.
         """
-        return (x * self.std) + self.mu
+        #return (x * self.std) + self.mu
+        return x * self.var
 
     def __call__(self, x):
 

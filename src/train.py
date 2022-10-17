@@ -27,12 +27,13 @@ def main():
     kl_weight = 0.
     wavelet_type = 'haar2'
     precompute_path = "/mnt/fast0/biv20/repos/vae_wavelet_coding"
-    use_rescaling = True # Whether to force all channels to have similar scale during training.
+    use_rescaling = True # Whether to force all channels to have similar scale during training. TODO Add to model only.
     use_residual_blocks = True
     device=4
+    project_name = "new-scaling-test"
 
     wandb.init(
-            project="varying-stdev",
+            project=project_name,
             config={
                 "batch_size" : batch_size,
                 "learning_rage" : learning_rate,
@@ -54,10 +55,9 @@ def main():
                 depth=DEPTH,
                 init_num_channels=init_num_channels,
                 output_channels=4, # The number of wavelet parameters per location.
-                use_residual_blocks=use_residual_blocks
+                use_residual_blocks=use_residual_blocks,
+                use_rescaling=use_rescaling
             ).to(device)
-
-    wandb.watch(model)
 
     # Logging
     # Datapoints unseen during the training process.
@@ -72,13 +72,11 @@ def main():
                     ifm,
                     it,
                     wandb,
-                    use_rescaling=use_rescaling,
                     device=device)
 
     trainer = WaveletVAETrainer(model, 
             summary_writer=wandb,
             learning_rate=learning_rate,
-            use_rescaling=use_rescaling,
             stdev=STDEV,
             laplace_b=laplace_b,
             kl_weight=kl_weight)
